@@ -1,0 +1,70 @@
+import random
+import time
+import sys
+import socket
+import http.client
+
+class TextStyle:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def morphing_text_effect(target_message, color, initial_message=None, iterations=10, delay=0.01):
+    
+    if initial_message is None:
+        initial_message = ''.join(random.choice('abcdefghijklmnopqrstuvwxyz0123456789 ') for _ in range(len(target_message)))
+
+    display = list(initial_message)
+
+    for i in range(iterations):
+        for j in range(len(display)):
+            if display[j] != target_message[j]:
+                display[j] = target_message[j]
+                break
+
+        sys.stdout.write('\r' + color + ''.join(display) + ' ' * (len(display) - len(''.join(display))) + TextStyle.ENDC)
+        sys.stdout.flush()
+        time.sleep(delay)
+
+    sys.stdout.write('\r' + color + target_message + TextStyle.ENDC + '\n')
+    sys.stdout.flush()
+
+def port_scanner():
+    target = input(TextStyle.BOLD + "Enter the IP address to scan: " + TextStyle.ENDC)
+    portrange = input(TextStyle.BOLD + "Enter the port range to scan (e.g., 1-1024): " + TextStyle.ENDC)
+    lowport = int(portrange.split('-')[0])
+    highport = int(portrange.split('-')[1])
+
+    scanning_message = f"Scanning host {target} from port {lowport} to port {highport}"
+    morphing_text_effect(scanning_message, TextStyle.FAIL)
+
+    for port in range(lowport, highport + 1):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        status = s.connect_ex((target, port))
+        result_message = f"Port {port} - {'OPEN' if status == 0 else 'CLOSED'}"
+        morphing_text_effect(result_message, TextStyle.FAIL, delay=0.005)
+        s.close()
+
+def check_http_methods():
+    print(TextStyle.BOLD + "The connection type must be HTTP\n" + TextStyle.ENDC)
+    host = input(TextStyle.BOLD + "Enter IP: " + TextStyle.ENDC)
+    port = input(TextStyle.BOLD + "Enter port: " + TextStyle.ENDC) or 80
+
+    try:
+        connection = http.client.HTTPConnection(host, int(port))
+        connection.request('OPTIONS', '/phpMyAdmin')
+        response = connection.getresponse()
+        response_message = f"Enabled methods are: {response.status} {response.reason}"
+        morphing_text_effect(response_message, TextStyle.OKGREEN)
+        connection.close()
+    except ConnectionRefusedError:
+        morphing_text_effect("Connection failed", TextStyle.FAIL, delay=0.005)
+
+if __name__ == "__main__":
+    port_scanner()
+    check_http_methods()
